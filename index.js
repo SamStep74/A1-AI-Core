@@ -30,6 +30,8 @@ const { createSettingsStore } = require("./src/settings-store");
 const openNotebookMod = require("./src/open-notebook");
 const supplemental = require("./src/supplemental");
 const { createChatClient } = require("./src/chat");
+const productResearch = require("./src/product-research");
+const { runProductResearchCli } = require("./src/product-research-runner");
 
 function createAi(deps = {}) {
   const {
@@ -62,7 +64,8 @@ function createAi(deps = {}) {
     chat,
     openNotebook,
     normalizeSupplementalSources: supplemental.normalizeSupplementalSources,
-    MAX_SUPPLEMENTAL_SOURCES: supplemental.MAX_SUPPLEMENTAL_SOURCES
+    MAX_SUPPLEMENTAL_SOURCES: supplemental.MAX_SUPPLEMENTAL_SOURCES,
+    productResearch
   };
 }
 
@@ -79,6 +82,16 @@ module.exports = {
   normalizeResults: openNotebookMod.normalizeResults,
   isEnabled: openNotebookMod.isEnabled,
   normalizeSupplementalSources: supplemental.normalizeSupplementalSources,
+  normalizeProductResearchConfig: productResearch.normalizeProductResearchConfig,
+  renderProductResearchProgram: productResearch.renderProductResearchProgram,
+  decideExperimentStatus: productResearch.decideExperimentStatus,
+  extractMetricFromText: productResearch.extractMetricFromText,
+  formatExperimentHeader: productResearch.formatExperimentHeader,
+  formatExperimentResult: productResearch.formatExperimentResult,
+  parseExperimentTsv: productResearch.parseExperimentTsv,
+  runProductResearchCli,
+  PRODUCT_RESEARCH_STATUS: productResearch.STATUS,
+  PRODUCT_RESEARCH_RESULT_COLUMNS: productResearch.DEFAULT_RESULT_COLUMNS,
   FALLBACK_MODELS: policy.FALLBACK_MODELS,
   MODEL_KEYS: policy.MODEL_KEYS,
   MODULES: policy.MODULES,
