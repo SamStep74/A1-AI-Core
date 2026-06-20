@@ -61,6 +61,14 @@ test("normalizeProductResearchConfig rejects broad or incomplete runs", () => {
       evalCommand: "npm test"
     }), /narrow repo-relative/);
   }
+
+  assert.throws(() => normalizeProductResearchConfig({
+    productName: "x",
+    runTag: "r",
+    editableFiles: ["src/a.js"],
+    readOnlyFiles: ["src/a.js"],
+    evalCommand: "npm test"
+  }), /readOnlyFiles overlap editableFiles/);
 });
 
 test("renderProductResearchProgram captures scope, metric, budget, and TSV header", () => {

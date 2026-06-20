@@ -154,9 +154,11 @@ function finiteOrNull(value) {
   return null;
 }
 
-function metricValueFromResult(evalConfig, result, helpers) {
+const EVAL_OUTPUT_MAX_BUFFER = 64 * 1024 * 1024;
+
+function metricValueFromResult(evalConfig, normalizedProgramConfig, result, helpers) {
   const output = [result.stdout, result.stderr].filter(Boolean).join("\n");
-  const metricName = evalConfig.eval.metric.name;
+  const metricName = normalizedProgramConfig.metric.name;
   const extracted = helpers.extractMetricFromText(output, metricName);
   if (extracted != null) return extracted;
   if (result.status === 0) return finiteOrNull(evalConfig.eval.successMetricValue);
@@ -230,9 +232,10 @@ async function productResearchMain({
     encoding: "utf8",
     env: { ...env, CI: "1" },
     shell: false,
-    timeout: Math.max(1, Number(evalConfig.eval.timeoutMinutes || 10)) * 60_000,
+    timeout: Math.max(1, normalizedProgramConfig.timeoutMinutes) * 60_000,
+    maxBuffer: EVAL_OUTPUT_MAX_BUFFER,
   });
-  const metricValue = metricValueFromResult(evalConfig, result, helpers);
+  const metricValue = metricValueFromResult(evalConfig, normalizedProgramConfig, result, helpers);
   const outcome = helpers.decideExperimentStatus({
     bestMetric,
     candidateMetric: metricValue,
@@ -247,7 +250,7 @@ async function productResearchMain({
     status: outcome.status,
     description: `${evalConfig.id} ${outcome.reason}`,
   });
-  const header = helpers.formatExperimentHeader(evalConfig.eval.metric.name);
+  const header = helpers.formatExperimentHeader(normalizedProgramConfig.metric.name);
   const logText = [
     `started=${started}`,
     `finished=${new Date().toISOString()}`,

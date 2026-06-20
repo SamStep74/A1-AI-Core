@@ -38,6 +38,8 @@ function makeRepo() {
   writeFileSync(path.join(repo, "docs", "out.txt"), "out of scope\n");
   writeFileSync(path.join(repo, "scripts", "metric.mjs"), "console.log('failing_checks=7'); console.log('memory_gb=1.25'); process.exit(1);\n");
   writeFileSync(path.join(repo, "scripts", "epsilon.mjs"), "console.log('score=10.005');\n");
+  writeFileSync(path.join(repo, "scripts", "default-metric.mjs"), "console.log('metric=42');\n");
+  writeFileSync(path.join(repo, "scripts", "verbose.mjs"), "console.log('x'.repeat(2 * 1024 * 1024)); console.log('metric=5');\n");
   writeFileSync(path.join(repo, "scripts", "no-metric.mjs"), "console.error('missing metric'); process.exit(1);\n");
   writeFileSync(path.join(repo, "scripts", "touch-out-of-scope.mjs"), "import { writeFileSync } from 'node:fs'; writeFileSync('docs/generated.txt', 'changed by eval\\n'); console.log('failing_checks=0');\n");
   writeJson(path.join(repo, "evals", "karpathy", "metric-check.json"), {
@@ -76,6 +78,58 @@ function makeRepo() {
       failureMetricValue: 1,
       timeBudgetMinutes: 1,
       timeoutMinutes: 2
+    }
+  });
+  writeJson(path.join(repo, "evals", "karpathy", "default-metric.json"), {
+    id: "default-metric",
+    productName: "Runner default metric test",
+    runTag: "default-metric-test",
+    branchPrefix: "karpathy/",
+    editableFiles: ["src/editable.txt"],
+    readOnlyFiles: ["scripts/default-metric.mjs"],
+    contextFiles: ["README.md", "package.json"],
+    guardrails: ["Keep the test narrow."],
+    eval: {
+      command: "node",
+      args: ["scripts/default-metric.mjs"],
+      successMetricValue: 0,
+      failureMetricValue: 1,
+      timeBudgetMinutes: 1
+    }
+  });
+  writeJson(path.join(repo, "evals", "karpathy", "verbose-default.json"), {
+    id: "verbose-default",
+    productName: "Runner verbose output test",
+    runTag: "verbose-output-test",
+    branchPrefix: "karpathy/",
+    editableFiles: ["src/editable.txt"],
+    readOnlyFiles: ["scripts/verbose.mjs"],
+    contextFiles: ["README.md", "package.json"],
+    guardrails: ["Keep the test narrow."],
+    eval: {
+      command: "node",
+      args: ["scripts/verbose.mjs"],
+      successMetricValue: 0,
+      failureMetricValue: 1,
+      timeBudgetMinutes: 1
+    }
+  });
+  writeJson(path.join(repo, "evals", "karpathy", "overlap-scope.json"), {
+    id: "overlap-scope",
+    productName: "Runner overlap scope test",
+    runTag: "overlap-scope-test",
+    branchPrefix: "karpathy/",
+    editableFiles: ["src/editable.txt"],
+    readOnlyFiles: ["src/editable.txt"],
+    contextFiles: ["README.md", "package.json"],
+    guardrails: ["Keep the test narrow."],
+    eval: {
+      command: "node",
+      args: ["scripts/default-metric.mjs"],
+      metric: { name: "metric", direction: "minimize" },
+      successMetricValue: 0,
+      failureMetricValue: 1,
+      timeBudgetMinutes: 1
     }
   });
   writeJson(path.join(repo, "evals", "karpathy", "epsilon-check.json"), {
@@ -268,6 +322,48 @@ test("runProductResearchCli records failed missing-metric runs as crashes", asyn
 
     const tsv = readFileSync(path.join(repo, "evals", "karpathy", "results", "missing-metric.tsv"), "utf8");
     assert.match(tsv, /crash\tmissing-metric crash/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test("runProductResearchCli uses normalized metric defaults for headers and extraction", async () => {
+  const repo = makeRepo();
+  try {
+    const program = await invoke(repo, ["--program", "default-metric"]);
+    assert.strictEqual(program.code, 0);
+    assert.match(program.stdout.join("\n"), /Metric: `metric`/);
+    assert.match(program.stdout.join("\n"), /Timeout: 10 minutes/);
+
+    const result = await invoke(repo, ["--run", "default-metric"]);
+    assert.strictEqual(result.code, 0);
+    assert.deepStrictEqual(result.stderr, []);
+    assert.match(result.stdout[0], /^commit\tmetric\tmemory_gb\tstatus\tdescription$/);
+    assert.match(result.stdout[1], /\t42\.000000\t0\.0\tkeep\tdefault-metric baseline/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test("runProductResearchCli captures verbose eval logs without default buffer crashes", async () => {
+  const repo = makeRepo();
+  try {
+    const result = await invoke(repo, ["--run", "verbose-default"]);
+    assert.strictEqual(result.code, 0);
+    assert.deepStrictEqual(result.stderr, []);
+    assert.match(result.stdout[1], /\t5\.000000\t0\.0\tkeep\tverbose-default baseline/);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test("runProductResearchCli rejects overlapping editable and read-only scopes", async () => {
+  const repo = makeRepo();
+  try {
+    const result = await invoke(repo, ["--run", "overlap-scope"]);
+    assert.strictEqual(result.code, 1);
+    assert.match(result.stderr.join("\n"), /readOnlyFiles overlap editableFiles: src\/editable\.txt/);
+    assert.strictEqual(existsSync(path.join(repo, "evals", "karpathy", "results", "overlap-scope.tsv")), false);
   } finally {
     rmSync(repo, { recursive: true, force: true });
   }

@@ -105,6 +105,11 @@ function normalizeProductResearchConfig(config = {}) {
   if (!evalCommand) throw new TypeError("evalCommand is required");
 
   const readOnlyFiles = normalizePathList(config.readOnlyFiles || [], "readOnlyFiles");
+  const editableSet = new Set(editableFiles);
+  const overlappingReadOnly = readOnlyFiles.filter(file => editableSet.has(file));
+  if (overlappingReadOnly.length) {
+    throw new TypeError(`readOnlyFiles overlap editableFiles: ${overlappingReadOnly.join(", ")}`);
+  }
   const contextFiles = normalizePathList(config.contextFiles || [], "contextFiles");
   const guardrails = normalizeList(config.guardrails || [], "guardrails");
   const metric = normalizeMetric(config.metric);
