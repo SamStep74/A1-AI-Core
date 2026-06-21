@@ -92,6 +92,14 @@ runProductResearchCli({ repoRoot: process.cwd(), argv: ["--list"] })
   .then(exitCode => { process.exitCode = exitCode; });
 ```
 
+This repo also pins the shared runner contract with its own eval lane:
+
+```
+npm run karpathy:list
+npm run karpathy:program -- product-research-core-contract
+npm run karpathy:run -- product-research-core-contract
+```
+
 See [KARPATHY_ROLLOUT.md](./KARPATHY_ROLLOUT.md) for the current attached-repo
 map and deferred repo gates.
 

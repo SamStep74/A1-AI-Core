@@ -1,0 +1,43 @@
+{
+  "id": "product-research-core-contract",
+  "productName": "A1 AI Core product research contract",
+  "runTag": "2026-06-21-product-research-core-contract",
+  "branchPrefix": "karpathy/",
+  "editableFiles": [
+    "src/product-research.js",
+    "src/product-research-runner.js",
+    "index.js"
+  ],
+  "readOnlyFiles": [
+    "scripts/check-product-research-core-contract.mjs",
+    "test/product-research.test.js",
+    "test/product-research-runner.test.js"
+  ],
+  "contextFiles": [
+    "README.md",
+    "KARPATHY_ROLLOUT.md",
+    "INTEGRATION.md",
+    "package.json"
+  ],
+  "guardrails": [
+    "Keep the shared product research helpers deterministic and dependency-free.",
+    "Keep product eval configs narrow: repo-relative files only, one scalar metric, and ignored local results.",
+    "Keep result TSV rows spreadsheet-safe and stable for downstream product repos.",
+    "Keep the runner fail-closed on invalid metrics, out-of-scope dirt, dirty read-only files, and TSV header mismatches.",
+    "Do not add network calls, model calls, git mutations, or product-specific config to the pure helper layer."
+  ],
+  "eval": {
+    "command": "node",
+    "args": [
+      "scripts/check-product-research-core-contract.mjs"
+    ],
+    "metric": {
+      "name": "failing_checks",
+      "direction": "minimize"
+    },
+    "successMetricValue": 0,
+    "failureMetricValue": 1,
+    "timeBudgetMinutes": 5,
+    "timeoutMinutes": 10
+  }
+}

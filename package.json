@@ -13,7 +13,10 @@
     "src/"
   ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "karpathy:list": "node scripts/karpathy-eval.mjs --list",
+    "karpathy:program": "node scripts/karpathy-eval.mjs --program",
+    "karpathy:run": "node scripts/karpathy-eval.mjs --run"
   },
   "engines": {
     "node": ">=22.5"

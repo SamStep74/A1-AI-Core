@@ -31,11 +31,14 @@ The low-level helper layer in `src/product-research.js` remains pure. The
 runner lives separately in `src/product-research-runner.js`, so products do not
 copy git/shell/result-log logic. Product repos own their local eval definitions
 and a tiny `scripts/karpathy-eval.mjs` shim that loads `@a1/ai`.
+The core repo pins this contract with `product-research-core-contract`, which
+keeps the helper and runner suites passing as a first-class eval lane.
 
 ## Attached Product Repos
 
 | Repo | Eval lane | Editable surface | Eval command | Status |
 | --- | --- | --- | --- | --- |
+| `A1-AI-Core` | `product-research-core-contract` | `src/product-research.js`, `src/product-research-runner.js`, `index.js` | `node scripts/check-product-research-core-contract.mjs` | Wired and locally passing |
 | `A1-Suite-Local-MAX` | `shell-health` | `apps/shell/src/app/api/health/route.ts` | `node_modules/.bin/vitest run --root . apps/shell/test/unit/shell-health-route.test.ts` | Wired and locally passing |
 | `A1-Platform-MAX` | `validate` | `src/lib/validate.ts` | `node_modules/.bin/vitest run test/unit/validate.test.ts` | Wired and locally passing |
 | `hayreel-landing` | `locale-message-parity` | `messages/hy.json`, `messages/en.json`, `messages/ru.json` | `node scripts/check-message-parity.mjs` | Wired and locally passing |
